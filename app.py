@@ -1,7 +1,10 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash
 from database.db import get_db, init_db, seed_db
+import sqlite3
 
 app = Flask(__name__)
+app.secret_key = 'dev-secret-key-change-in-production'
 
 with app.app_context():
     init_db()
@@ -17,8 +20,46 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        if not name:
+            return render_template("register.html", error="Name is required")
+
+        if not email or "@" not in email or "." not in email:
+            return render_template("register.html", error="Please enter a valid email address")
+
+        if len(password) < 8:
+            return render_template("register.html", error="Password must be at least 8 characters")
+
+        conn = get_db()
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return render_template("register.html", error="Email already registered. Please log in.")
+
+            password_hash = generate_password_hash(password)
+            cursor.execute(
+                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                (name, email, password_hash)
+            )
+            conn.commit()
+
+            flash("Account created successfully! Please log in.", "success")
+            return redirect(url_for("login"))
+
+        except sqlite3.IntegrityError:
+            conn.rollback()
+            return render_template("register.html", error="Email already registered. Please log in.")
+        finally:
+            conn.close()
+
     return render_template("register.html")
 
 
