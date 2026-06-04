@@ -73,7 +73,7 @@
             <h2 class="section-title">Category Breakdown</h2>
             <div class="category-breakdown">
                 {% for category in categories %}
-                <div class="category-item" style="--progress-width: {{ category.percentage }}%;">
+                <div class="category-item" style="--progress-width: {{ category.pct }}%;">
                     <div class="category-item-header">
                         <span class="category-item-name">{{ category.name }}</span>
                         <span class="category-item-amount">₹{{ "%.2f"|format(category.amount) }}</span>
