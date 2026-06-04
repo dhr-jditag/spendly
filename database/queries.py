@@ -74,15 +74,30 @@ def get_summary_stats(user_id):
         conn.close()
 
 
-def get_recent_transactions(user_id, limit=10):
-    """Returns list of recent transaction dicts with formatted dates."""
+def get_recent_transactions(user_id, limit=10, start_date=None, end_date=None):
+    """Returns list of recent transaction dicts with formatted dates.
+
+    If start_date and end_date are provided, returns ALL transactions in that range.
+    Otherwise, returns the most recent transactions up to the limit.
+    """
     conn = get_db()
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
-            (user_id, limit)
-        )
+
+        # Build query based on whether date filtering is active
+        if start_date and end_date:
+            # Show all transactions within date range (no limit)
+            cursor.execute(
+                "SELECT date, description, category, amount FROM expenses WHERE user_id = ? AND date >= ? AND date <= ? ORDER BY date DESC, id DESC",
+                (user_id, start_date, end_date)
+            )
+        else:
+            # Show most recent transactions with limit
+            cursor.execute(
+                "SELECT date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT ?",
+                (user_id, limit)
+            )
+
         rows = cursor.fetchall()
 
         transactions = []
