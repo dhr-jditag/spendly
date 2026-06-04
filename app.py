@@ -125,10 +125,22 @@ def profile():
 
     user_id = session["user_id"]
 
+    # Extract date filter parameters from query string
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+
+    # Only apply filter if both dates are present
+    filter_active = bool(start_date and end_date)
+
     # Fetch live data from database
     user_info = get_user_by_id(user_id)
     summary_stats = get_summary_stats(user_id)
-    transactions = get_recent_transactions(user_id, limit=10)
+
+    if filter_active:
+        transactions = get_recent_transactions(user_id, start_date=start_date, end_date=end_date)
+    else:
+        transactions = get_recent_transactions(user_id, limit=10)
+
     categories = get_category_breakdown(user_id)
 
     # Handle case where user not found (shouldn't happen if session is valid)
@@ -136,12 +148,29 @@ def profile():
         flash("User not found", "error")
         return redirect(url_for("logout"))
 
+    # Format dates for display if filter is active
+    start_date_formatted = None
+    end_date_formatted = None
+    if filter_active:
+        try:
+            from datetime import datetime
+            start_date_formatted = datetime.strptime(start_date, "%Y-%m-%d").strftime("%d %b %Y")
+            end_date_formatted = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d %b %Y")
+        except ValueError:
+            # Invalid date format, ignore formatting
+            pass
+
     return render_template(
         "profile.html",
         user_info=user_info,
         summary_stats=summary_stats,
         transactions=transactions,
-        categories=categories
+        categories=categories,
+        filter_active=filter_active,
+        start_date=start_date,
+        end_date=end_date,
+        start_date_formatted=start_date_formatted,
+        end_date_formatted=end_date_formatted
     )
 
 
