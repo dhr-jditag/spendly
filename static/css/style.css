@@ -19,6 +19,18 @@
     --border: #e4e1da;
     --border-soft: #eeebe4;
 
+    /* Category badge colors */
+    --badge-food-bg: #fef3c7;
+    --badge-food-text: #92400e;
+    --badge-transport-bg: #dbeafe;
+    --badge-transport-text: #1e40af;
+    --badge-entertainment-bg: #e9d5ff;
+    --badge-entertainment-text: #6b21a8;
+    --badge-shopping-bg: #fce7f3;
+    --badge-shopping-text: #9f1239;
+    --badge-bills-bg: #d1fae5;
+    --badge-bills-text: #065f46;
+
     --font-display: 'DM Serif Display', Georgia, serif;
     --font-body: 'DM Sans', system-ui, sans-serif;
 
