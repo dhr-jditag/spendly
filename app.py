@@ -5,9 +5,11 @@ from database.queries import (
     get_user_by_id,
     get_summary_stats,
     get_recent_transactions,
-    get_category_breakdown
+    get_category_breakdown,
+    insert_expense
 )
 import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'
@@ -125,10 +127,22 @@ def profile():
 
     user_id = session["user_id"]
 
+    # Extract date filter parameters from query string
+    start_date = request.args.get("start_date", "").strip()
+    end_date = request.args.get("end_date", "").strip()
+
+    # Only apply filter if both dates are present
+    filter_active = bool(start_date and end_date)
+
     # Fetch live data from database
     user_info = get_user_by_id(user_id)
     summary_stats = get_summary_stats(user_id)
-    transactions = get_recent_transactions(user_id, limit=10)
+
+    if filter_active:
+        transactions = get_recent_transactions(user_id, start_date=start_date, end_date=end_date)
+    else:
+        transactions = get_recent_transactions(user_id, limit=10)
+
     categories = get_category_breakdown(user_id)
 
     # Handle case where user not found (shouldn't happen if session is valid)
@@ -136,27 +150,112 @@ def profile():
         flash("User not found", "error")
         return redirect(url_for("logout"))
 
+    # Format dates for display if filter is active
+    start_date_formatted = None
+    end_date_formatted = None
+    if filter_active:
+        try:
+            from datetime import datetime
+            start_date_formatted = datetime.strptime(start_date, "%Y-%m-%d").strftime("%d %b %Y")
+            end_date_formatted = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d %b %Y")
+        except ValueError:
+            # Invalid date format, ignore formatting
+            pass
+
     return render_template(
         "profile.html",
         user_info=user_info,
         summary_stats=summary_stats,
         transactions=transactions,
-        categories=categories
+        categories=categories,
+        filter_active=filter_active,
+        start_date=start_date,
+        end_date=end_date,
+        start_date_formatted=start_date_formatted,
+        end_date_formatted=end_date_formatted
     )
 
 
-@app.route("/analytics")
-def analytics():
-    # Authentication guard - only logged in users can access
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    # Authentication guard
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    return render_template("analytics.html")
+    # Define valid categories
+    VALID_CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
 
+    if request.method == "POST":
+        # Extract form data
+        amount_str = request.form.get("amount", "").strip()
+        category = request.form.get("category", "").strip()
+        date = request.form.get("date", "").strip()
+        description = request.form.get("description", "").strip()
 
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
+        # Convert empty description to None
+        if not description:
+            description = None
+
+        # Validation
+        error = None
+
+        # Validate amount
+        try:
+            amount = float(amount_str)
+            if amount <= 0:
+                error = "Amount must be greater than zero"
+        except (ValueError, TypeError):
+            error = "Please enter a valid amount"
+
+        # Validate category
+        if not error and category not in VALID_CATEGORIES:
+            error = "Please select a valid category"
+
+        # Validate date
+        if not error:
+            try:
+                datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                error = "Please enter a valid date"
+
+        # If validation failed, re-render form with error and previous values
+        if error:
+            return render_template(
+                "add_expense.html",
+                error=error,
+                amount=amount_str,
+                category=category,
+                date=date,
+                description=description,
+                categories=VALID_CATEGORIES,
+                today=datetime.now().strftime("%Y-%m-%d")
+            )
+
+        # Insert expense
+        try:
+            user_id = session["user_id"]
+            insert_expense(user_id, amount, category, date, description)
+            flash("Expense added successfully!", "success")
+            return redirect(url_for("profile"))
+        except Exception as e:
+            return render_template(
+                "add_expense.html",
+                error="Failed to save expense. Please try again.",
+                amount=amount_str,
+                category=category,
+                date=date,
+                description=description,
+                categories=VALID_CATEGORIES,
+                today=datetime.now().strftime("%Y-%m-%d")
+            )
+
+    # GET request - render form with today's date as default
+    today = datetime.now().strftime("%Y-%m-%d")
+    return render_template(
+        "add_expense.html",
+        categories=VALID_CATEGORIES,
+        today=today
+    )
 
 
 @app.route("/expenses/<int:id>/edit")
