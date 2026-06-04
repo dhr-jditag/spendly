@@ -39,7 +39,10 @@
 
         <!-- Transaction History Table -->
         <div class="content-section">
-            <h2 class="section-title">Transactions</h2>
+            <div class="section-header">
+                <h2 class="section-title">Transactions</h2>
+                <a href="{{ url_for('add_expense') }}" class="btn-add-expense">+ Add Expense</a>
+            </div>
 
             <!-- Date Filter Form -->
             <div class="date-filter-form">
@@ -244,11 +247,125 @@
     margin-bottom: 2rem;
 }
 
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
 .section-title {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--ink);
+    margin: 0;
+}
+
+.btn-add-expense {
+    padding: 0.6rem 1.25rem;
+    background: var(--accent);
+    color: var(--paper);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.btn-add-expense:hover {
+    opacity: 0.9;
+}
+
+/* Date Filter Form */
+.date-filter-form {
     margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.filter-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.date-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: inherit;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.filter-separator {
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+}
+
+.btn-filter,
+.btn-clear {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-filter {
+    background: var(--accent);
+    color: var(--paper);
+}
+
+.btn-filter:hover {
+    opacity: 0.9;
+}
+
+.btn-clear {
+    background: var(--border);
+    color: var(--ink-soft);
+}
+
+.btn-clear:hover {
+    background: var(--ink-muted);
+    color: var(--paper);
+}
+
+.filter-active-message {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    margin-top: 0.5rem;
+}
+
+.empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
 }
 
 /* Date Filter Form */
@@ -487,6 +604,17 @@
     .stats-row {
         grid-template-columns: 1fr;
         gap: 1rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-add-expense {
+        width: 100%;
+        text-align: center;
     }
 
     .transaction-table th,

@@ -162,3 +162,18 @@ def get_category_breakdown(user_id):
         return categories
     finally:
         conn.close()
+
+
+def insert_expense(user_id, amount, category, date, description):
+    """Inserts a new expense record and returns the new expense ID."""
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, date, description)
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
