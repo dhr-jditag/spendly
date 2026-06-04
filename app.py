@@ -113,7 +113,50 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return render_template("profile.html")
+    # Authentication guard
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    # Hardcoded user info
+    user_info = {
+        "name": session.get("user_name", "User"),
+        "email": session.get("user_email", "user@example.com"),
+        "member_since": "May 2026"
+    }
+
+    # Hardcoded summary stats
+    summary_stats = {
+        "total_spent": 45230.50,
+        "transaction_count": 24,
+        "top_category": "Food & Dining"
+    }
+
+    # Hardcoded transaction history
+    transactions = [
+        {"date": "01 Jun 2026", "description": "Dinner at The Olive Garden", "category": "Food & Dining", "amount": 1850.00},
+        {"date": "31 May 2026", "description": "Uber ride to office", "category": "Transport", "amount": 320.00},
+        {"date": "30 May 2026", "description": "Monthly Netflix subscription", "category": "Entertainment", "amount": 649.00},
+        {"date": "28 May 2026", "description": "Grocery shopping at BigBasket", "category": "Food & Dining", "amount": 2450.00},
+        {"date": "25 May 2026", "description": "New headphones", "category": "Shopping", "amount": 3499.00},
+        {"date": "22 May 2026", "description": "Electricity bill", "category": "Bills", "amount": 1850.00}
+    ]
+
+    # Hardcoded category breakdown
+    categories = [
+        {"name": "Food & Dining", "amount": 12850.00, "percentage": 85},
+        {"name": "Transport", "amount": 8450.00, "percentage": 70},
+        {"name": "Shopping", "amount": 6230.00, "percentage": 55},
+        {"name": "Entertainment", "amount": 4200.00, "percentage": 40},
+        {"name": "Bills", "amount": 3500.00, "percentage": 30}
+    ]
+
+    return render_template(
+        "profile.html",
+        user_info=user_info,
+        summary_stats=summary_stats,
+        transactions=transactions,
+        categories=categories
+    )
 
 
 @app.route("/expenses/add")
