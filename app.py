@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from werkzeug.security import generate_password_hash
-from database.db import get_db, init_db, seed_db
+from werkzeug.security import generate_password_hash, check_password_hash
+from database.db import get_db, init_db, seed_db, get_user_by_email
 import sqlite3
 
 app = Flask(__name__)
@@ -22,6 +22,10 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    # If already logged in, redirect to profile
+    if "user_id" in session:
+        return redirect(url_for("profile"))
+
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -63,8 +67,27 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
+    # If already logged in, redirect to profile
+    if "user_id" in session:
+        return redirect(url_for("profile"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        user = get_user_by_email(email)
+
+        if user and check_password_hash(user["password_hash"], password):
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
+            session["user_email"] = user["email"]
+            return redirect(url_for("profile"))
+        else:
+            flash("Invalid email or password.", "error")
+            return redirect(url_for("login"))
+
     return render_template("login.html")
 
 
@@ -84,12 +107,13 @@ def privacy():
 
 @app.route("/logout")
 def logout():
-    return "Logout — coming in Step 3"
+    session.clear()
+    return redirect(url_for("landing"))
 
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    return render_template("profile.html")
 
 
 @app.route("/expenses/add")

@@ -83,3 +83,14 @@ def seed_db():
         conn.commit()
 
     conn.close()
+
+
+def get_user_by_email(email):
+    """Returns a user row by email, or None if not found."""
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, email, password_hash FROM users WHERE email = ?", (email,))
+        return cursor.fetchone()
+    finally:
+        conn.close()
