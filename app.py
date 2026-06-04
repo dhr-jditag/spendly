@@ -1,6 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db, get_user_by_email
+from database.queries import (
+    get_user_by_id,
+    get_summary_stats,
+    get_recent_transactions,
+    get_category_breakdown
+)
 import sqlite3
 
 app = Flask(__name__)
@@ -117,38 +123,18 @@ def profile():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Hardcoded user info
-    user_info = {
-        "name": session.get("user_name", "User"),
-        "email": session.get("user_email", "user@example.com"),
-        "member_since": "May 2026"
-    }
+    user_id = session["user_id"]
 
-    # Hardcoded summary stats
-    summary_stats = {
-        "total_spent": 45230.50,
-        "transaction_count": 24,
-        "top_category": "Food & Dining"
-    }
+    # Fetch live data from database
+    user_info = get_user_by_id(user_id)
+    summary_stats = get_summary_stats(user_id)
+    transactions = get_recent_transactions(user_id, limit=10)
+    categories = get_category_breakdown(user_id)
 
-    # Hardcoded transaction history
-    transactions = [
-        {"date": "01 Jun 2026", "description": "Dinner at The Olive Garden", "category": "Food & Dining", "amount": 1850.00},
-        {"date": "31 May 2026", "description": "Uber ride to office", "category": "Transport", "amount": 320.00},
-        {"date": "30 May 2026", "description": "Monthly Netflix subscription", "category": "Entertainment", "amount": 649.00},
-        {"date": "28 May 2026", "description": "Grocery shopping at BigBasket", "category": "Food & Dining", "amount": 2450.00},
-        {"date": "25 May 2026", "description": "New headphones", "category": "Shopping", "amount": 3499.00},
-        {"date": "22 May 2026", "description": "Electricity bill", "category": "Bills", "amount": 1850.00}
-    ]
-
-    # Hardcoded category breakdown
-    categories = [
-        {"name": "Food & Dining", "amount": 12850.00, "percentage": 85},
-        {"name": "Transport", "amount": 8450.00, "percentage": 70},
-        {"name": "Shopping", "amount": 6230.00, "percentage": 55},
-        {"name": "Entertainment", "amount": 4200.00, "percentage": 40},
-        {"name": "Bills", "amount": 3500.00, "percentage": 30}
-    ]
+    # Handle case where user not found (shouldn't happen if session is valid)
+    if user_info is None:
+        flash("User not found", "error")
+        return redirect(url_for("logout"))
 
     return render_template(
         "profile.html",
